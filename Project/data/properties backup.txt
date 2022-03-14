@@ -1,0 +1,26 @@
+--- server ---
+server,192.168.178.48
+port,5555
+--- server ---
+
+--- ip notes ---
+Niklas,192.168.178.48
+Annett,192.168.178.39
+--- ip notes ---
+
+--- layout ---
+width,800
+fullscreen,false
+--- layout ---
+
+--- classic ---
+background,323232
+player1_1,323296
+player2_1,963232
+player1_2,969696
+player2_2,969696
+normal_text,0a0a0a
+buttons,646464
+chat,646464
+--- classic ---
+

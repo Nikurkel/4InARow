@@ -1,0 +1,24 @@
+Name:           Niklas Ertle
+Matrikelnummer: 309681
+Hochschule:     Hochschule Schmalkalden
+Studiengang:    Informatik Bachelor (BaI)
+Semester:       WS2020/21 5.Fachsemester
+
+Veranstaltung:  Projekt Informatik (PI)
+Lehrende:       Thomas Heimrich
+
+Projektname:    4InARow
+
+Aufgabenstellung:
+
+im Rahmen vom "Projekt Informatik" ist eine kleine
+Client-Server-Anwendung zu programmieren. Die Studenten können dabei
+in Zweiergruppen zusammenarbeiten oder die Anwendung alleine
+erstellen. Welche Anwendung genau erstellt wird, können Sie wählen.
+Oft werden kleine Spiele wie Tic Tac Toe oder Schiffe versenken als
+verteilte Anwendung erstellt. Natürlich sind auch Datenbankanwendungen
+oder Web-Anwendungen mit PHP/JavaScript möglich. Das fertige Projekt
+muss am 31.03.2021 per Mail zu mir geschickt werden. Zu der Anwendung
+soll eine technische Dokumentation von ca. 3-5 Seiten erstellt werden.
+Diese sollte die wichtigsten Elemente (z.B. Klassen, Datenmodelle
+usw.) beschreiben.

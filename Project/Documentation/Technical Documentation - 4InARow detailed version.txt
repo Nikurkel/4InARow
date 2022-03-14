@@ -1,0 +1,417 @@
+Technical Documentation - long version
+
+server.py uses load.py, game.py
+client.pyw uses load.py, network.py, button.py, internal class "Game" to store game.py variables
+
+load.py
+	imports csv to read and write in a file. CSV is a filetype for storing values (comma seperated values).
+
+	class Data
+		__init__(filepath)
+			filePath = String with the specified filepath to load
+			allDate = empty list
+			calls update()
+		update() adds all not empty lines in the specified file into the emptied list allData
+		find(index) returns the first value it finds for the key "index"	input: "width"	returns: "1200"
+		findColorList(themeName) collects the theme and translates colors to tuple 	returns the dictionary
+		listThemes() lists all the themeNames in the file
+		formatSave(themeName, colorDictionary) parses Dictionary into list. Translates colors from int tuples to Hex String
+			input:
+				themeName = "classic"
+				colorDictionary = 
+				{
+					"background":   (50,50,50),
+		            "player1_1":    (50,50,150),
+		            "player2_1":    (150,50,50),
+		            "player1_2":    (150,150,150),
+		            "player2_2":    (150,150,150),
+		            "normal_text":  (10,10,10),
+		            "buttons":      (100,100,100),
+		            "chat":         (100,100,100)
+	            }
+
+	        returns:
+	            [
+					[--- classic ---]
+					[background,323232]
+					[player1_1,323296]
+					[player2_1,963232]
+					[player1_2,969696]
+					[player2_2,969696]
+					[normal_text,0a0a0a]
+					[buttons,646464]
+					[chat,646464]
+					[--- classic ---]
+				]
+
+		save(themeName, colorDictionary) uses formatSave to format before saving the colorDictionary to the file
+			if the theme already exists in the file, the section will be updated
+			else the theme section will be added at the end of the file
+			at the end the allData list gets updated
+
+game.py
+	imports random, time and threading
+
+	class Game
+
+		__init__(id)
+			id = int (0 - n) gameId given from the Server
+			wins = a list keeping track how often each player has won a game
+			ready = boolean enables/disables player to make a move before both player have joined
+			nextPlayer = int (1 or 2) determines which player can make the next move
+			state = 2 dimensional array (7 x 5) representing the game field with int(0 - 4)
+				0 = nothing
+				1 = player 1
+				2 = player 2
+				3 = player 1 win
+				4 = player 2 win
+			chat = list of Strings including identifier
+				0 = player 1
+				1 = player 2
+				2 = system
+			debug = boolean for enable/disable outputing the games activities on the servers console
+			waitBetweenRounds = int (0 - n) time before resetting the game field after finishing the round in seconds
+			roundDone = boolean indicating if the round is finished or not
+			userNames = list containing two Strings with the Players username
+			colors = dictionary with the 2 Players main and secondary color
+		move(player, number) : player makes move at position number
+			if player is nextPlayer and at number of game field can go another move, make move and call checkState
+		checkState() : check if somebody won or there are no more moves left
+			check for both players if they won by calling checkHorizontals(player), checkVerticals(player), checkDiagonals(player)
+			if a player won, call winner(player)
+			if no one won and checkNoMoreMoves() returns True, call winner(-1) -> tie
+		checkHorizontals(player) : check if player has 4 in a horizontal row
+			checking on state for x (0 - 3) and y (0 - 4) if pos, pos x+1, pos x+2, pos x+3 is 'player'
+			also sets the 4 winning fields to the players win number 
+		checkVerticals(player) : check if player has 4 in a vertical row
+			checking on 'state' for x (0 - 6) and y (0 - 1) if pos, pos y+1, pos y+2, pos y+3 is 'player'
+			also sets the 4 winning fields to the players win number
+		checkDiagonals(player) : check if 'player' has 4 in a diagonal row
+			checking on 'state' for x (0 - 6) and y (0 - 1) 
+				if x greater 2 and pos, pos x-1 y+1, pos x-2 y+2, pos x-3 y+3 is 'player'
+				if x smaller 4 and pos, pos x+1 y+1, pos x+2 y+2, pos x+3 y+3 is 'player'
+			also sets the 4 winning fields to the players win number
+		checkNoMoreMoves(): returns True if there are no free fields left
+		winner(player) : ends round
+			if 'player' is not -1, increment 'wins' for 'player'
+			'roundDone' becomes True
+			creates new thread which calls restart() after 'waitBetweenRounds' seconds
+		restart() : starts new round
+			set random 'nextPlayer'
+			clear the 'state'
+			'roundDone' becomes False
+		newMsg(msg) : adds 'msg' to the chat
+		newCmd(msg) : analyzes 'msg' and does something to the game depending on its contents
+			/reset wins : sets 'wins' to [0,0]
+			/reset state : creates new thread which calls restart() after 'waitBetweenRounds' seconds
+			/reset chat : clears 'chat'
+			/say 'text' : System message "Player 'player' 'text'"
+			/roll : message random number (1-6)
+			/roll x : (int) message random number (1-x)
+			/delay x : (float) set 'waitBetweenRounds' to x in seconds
+			/name s : sets 'userNames' for 'player' to s
+			/color this c1,c2 : changes 'colors' for 'player'
+			/help : system message describing Server Commands
+			/help 2 : system message describing Client Commands
+			else : system message command not found
+
+server.py
+	imports socket, json and _thread 
+	also uses Game class from game.py and Data class from load.py
+
+	d = Data(properties.txt) || loads the properties file to extract specified port
+	server = host ip
+	port = d.find(port)
+	sock = specification for IPv4 Socket
+	binding Socket to local address (server, port)
+	activate Socket for listening
+	games = list of created and still open games
+	gameId = game Identifikation
+	idCount = amount of connected clients
+
+	threaded_client 
+		always gets called in a new thread
+		called with information about the connection, the gameId and wether the client is the first or second player
+		has access to the global idCount, to reduce it when exiting
+		sends the client feedback about which player it is
+		while True loop
+			runs as long as the connection is open
+			waits to receive 'data' from client
+			if game is no longer running, then end connection
+			if 'data' is null, then end connection
+			if 'data' is "get", then send game state as json
+			if 'data' is number in valid range, then call game.move(player, data) and then send back the game state as json
+			if 'data' starts with "message", then call game.newMsg("'player',rest of 'data'") and then send back the game state as json
+			if 'data' starts with "command", then call game.newCmd("'player',rest of 'data'") and then send back the game state as json
+				if the second element in 'data' is "close", then end connection
+		connection gets closed
+		delete game
+		idCount -= 1
+		closes connection
+
+	while True loop
+		runs as long as the server is open
+		conn, addr = waits for new connection
+			conn = socket object to send and receive data
+			addr = address on the other side of the connection
+		idCount += 1
+		gameId = 2 player per 'gameId'
+		player = 0
+		if 'idCount' is uneven, then create new Game(gameId)
+		if 'idCount' is even, then player = 1 and game.ready = True
+		start new thread with threaded_client(conn, player, gameId)
+
+network.py
+	imports socket
+
+	class Network
+
+		__init__(server, port)
+
+			sock = specification for IPv4 Socket
+			server = server address given from the client
+			port = specified port given from the client
+			addr = 'server' + 'port'
+			buffer = size in x bytes
+			player = calls connectToServer to get wether client is player 0 or player 1 (starts connection to server)
+
+		getPlayer() : returns 'player'
+
+		connectToServer() : sends clients 'addr' and returns player number on server
+
+		send(data) : sends 'data' from client to server and returns gameState from server to client
+
+button.py
+	imports pygame
+
+	class Button
+		__init__(text, x, y, color, textColor, width)
+			text = String written on button
+			x = x position on screen
+			y = y position on screen
+			color = color tuple of the buttons background
+			textColor = color tuple of the text
+			width = width and height of the button on screen
+
+		draw(win, font) : draws button on screen
+			win = window to draw on
+			font = font to use for 'text'
+			draw rectangle on 'win'
+			draw text in the centre of the button
+
+		click(pos) : check if pos overlaps with button
+			pos = x and y position on screen
+			if pos is on button, then return True, else return False
+
+client.pyw
+	imports pygame, pygame_gui, json, time, threading
+	also use class Network from network.py, class Button from button.py and class Data from load.py
+	initialize pygame and pygame.font
+
+	class Game
+		__init__(**entries) : builds a holding replica for the variables in game.py
+			**entries = all variables given to the class
+			__dict__ = stores all **entries
+
+	class Client
+		ref(x) : returns the relative x value depending on the base layout to the current layout
+			base layout : width = 1600, height = 900
+			current layout : width is variable, so height becomes 900 * 'width' / 1600
+			returns x * currentWidth / 1600 (rounded)
+			makes all elements (x, y, width, height) scalable relative to the window size
+
+		__init__()
+			infos = monitor information
+			maxWidth = in 'infos' the monitors width
+			specifiedWidth = the windows target width
+			fullscreen = boolen if the window is in fullscreen or not
+			data = Data(properties.txt) || loads the properties file
+			sets 'specifiedWidth' to the specification in 'data'
+			sets 'fullscreen' to the specification in 'data'
+			if 'fullscreen', then width = 'maxWidth' else width = 'specifiedWidth'
+				width = windows actual width
+			height = ref(900)
+			window = display('width', 'height', 'fullscreen')
+			gui_manager = UI-Manager('width', 'height')
+			messageInput = new UITextEntryLine on gui_manager
+			buttonPos_x = list of button x positions
+			buttonPos_y = list of gamefield y positions
+			messagePos_x = the x position for the chat messages
+			messagePos_y = list of chat message y positions
+			messageIndex = beggining and ending index of messages to draw
+			colors = dictionary of colors to use in the window
+			set 'colors' to the section of "classic" in 'data'
+			winAnimation = counter that specifys colors if somebody won
+			animationSpeed = time between winAnimation increments
+			btns = list of Buttons
+			run = condition to run while loop for playing
+			n = Network(server from 'data', port from 'data')
+			player = n.getPlayer() || get set player number from server
+			userNameThis = my username update to server
+			userNameOther = opponents username updated from server
+			clock = tool to control frame rate of window
+			messages = list of messages updated from server
+			ownMessages = list of send messages to quickly fill back the text entry with old messages
+			ownMessagesIndex = index to load old message
+			update my player color on server
+
+		drawBackground('window', 'colors', p = 'player', 'width', 'height', 'buttonPos_x', 'buttonPos_y', 'btns')
+			fromButton = column width
+			gameWidth = 'width' - stats and chat (main game width)
+			draws backround and separation lines
+			draws backround of chat to players secondary color
+			
+		drawChat('window', 'colors', font = used font, msgs = 'messages', 'messagePos_x', 'messagePos_y', 'messageIndex')
+			text = iterated msgs
+			draws a chat background and the chat text in the senders color
+
+		drawElements('window', 'colors', game = gamestate from server, font = used font, p = 'player', 'btns', 'userNameThis', 'userNameOther')
+			update in 'btns' 'color' and 'textColor' from 'colors', then draw 'btns'
+			text = drawable String
+			draw 'usernameThis' in players 'color' on screen
+			draw game.wins on screen
+			draw game.nextPlayer on screen
+
+		drawGame('window', 'colors', game = gamestate from server, 'buttonPos_x', 'buttonPos_y', 'winAnimation')
+			offset = centre of a field (for both x and y)
+			ring = inner radius of hollow ring to draw
+			draw circles with players primary and secondary color for each number not 0 in game.state
+			if game.state is 3 or 4 and if winAnimation is uneven, then flip primary and secondary player colors 
+
+		redrawWindow(game = gamestate from server)
+			font = default font with size of ref(40)
+			call drawBackground
+	        call drawChat
+	        call drawElements
+	        call drawGame
+	        draw ui with 'gui_manager' on 'window'
+	        update display
+
+	    clientCommand(command = command meant for the client to process send from the 'messageInput')
+	    	depending on the contents of the command, the client will do different things
+	    		//color ELEMENT COLOR : changes the color of ELEMENT (key in 'colors') to the specified COLOR (rgb hex code)
+	    			ELEMENT = [me1, me2, background, buttons, text, chat]
+	    			if ELEMENT is me1 or me2, then the server updates its 'colors' for this player
+	    		//scale WIDTH : sets 'specifiedWidth' to X, reinintializes the window and gui and rescales everything accordingly with rescale()
+	    		//save THEME_NAME : calls data.save(THEME_NAME, 'colors')
+	    		//load THEME_NAME : sets 'colors' to data.findColorList(THEME_NAME) and the server updates ist 'colors'
+	    		//themes : calls data.listThemes() and lists all themes in the chat
+	    		//ping : draws the time between sending and receiving packages in the chat
+
+		toggleFrame()
+			is called in new thread
+			while 'run'
+				'winAnimation' += 1
+				wait for 'animationSpeed' seconds
+
+		rescale()
+			text = temporarly saves the 'messageInput' text
+			creates new 'messageInput' at new position
+			inserts text back into 'messageInput'
+			recalculates 'buttonPos_x', 'buttonPos_y', 'messagePos_x', 'messagePos_y'
+			resets 'btns'
+
+		input(game = gamestate from server)
+			check all pygame events as event
+				if event is KEYDOWN
+					if key is ESCAPE, then call quit()
+					if key is RETURN, then call sendMessage()
+					if key is UP, then call scrollUp()
+					if key is DOWN, then call scrollDown()
+					if key is TAB, then call toggleFullscreen()
+				if event is QUIT, then call quit()
+				if event is MOUSEBUTTONDOWN, then call clickButton('event', 'game')
+				if event is MOUSEWHEEL, then call adjustChat('event')
+				process 'event' for 'gui_manager'
+			if 'run', then update 'gui_manager' with 'clock'.tick(30)
+
+		quit()
+			sends server "/close" command
+			quit pygame
+			'run' becomes False
+
+		sendMessage()
+			if start of 'messageInput'.text is "//", then call clientCommand(rest of 'messageInput'.text)
+			else if start of 'messageInput'.text is "/", then send command tag + 'messageInput'.text to server
+			else send message tag + messageInput'.text to server
+			append 'messageInput'.text to start of 'ownMessages'
+			clear 'messageInput'.text
+			set 'ownMessagesIndex' to -1
+
+		scrollUp()
+			'ownMessageIndex' += 1
+			if 'ownMessagesIndex' is greater or equal to the ammount in 'ownMessages', 
+			 	then 'ownMessagesIndex' becomes ammount in 'ownMessages' - 1
+	        else set the 'messageInput'.text to 'ownMessages'[ownMessagesIndex]
+
+	    scrollDown()
+			'ownMessageIndex' -= 1
+			if 'ownMessagesIndex' is smaller or equal to -1, then 'ownMessagesIndex' becomes -1 and clear 'messageInput'.text
+	        else if 'ownMessagesIndex' is smaller than the ammount in 'ownMessages', 
+	        then set the 'messageInput'.text to 'ownMessages'[ownMessagesIndex]
+
+	    toggleFullscreen()
+	    	reinitialize the window
+	    	if 'fullscreen', then set 'width' to 'specifiedWidth', recalculate 'height' and set window to ('width', 'height')
+	    	else set 'width' to maxWidth, recalculate 'height' and set window to ('window, 'height', pygame.FULLSCREEN)
+	    	toggle the 'fullscreen' bool
+	    	set 'gui_manager' to ('width', 'height')
+	    	call rescale()
+
+	    clickButton(event, game)
+	    	for all buttons in 'btns'
+	    		check if button was clicked at event.pos and if game.ready, 
+	    			then 'n'.send(button.text) || sends number of button to server to make game.move
+
+	    adjustChat(event) : calculates the 'messageIndex'
+	    	if there are more than 13 messages, then 
+	    		set the 'messageIndex' so that there is a difference of 13
+	    	
+	    updateUser(game)
+	    	set 'userNameThis', 'userNameOther' and in 'colors' the opponents colors to what is defined in game
+
+	    updateChat(game)
+	    	if 'messages' is not equal to game.chat, then 'messages' becomes game.chat and the chat jumps to the newest message
+
+	    main()
+	    	start new thread after 'animationSpeed' seconds and call toggleFrame
+	    	while 'run'
+	    		args = gets gamestate information from 'n'
+	    		game = dummy game object to collect all variables from server
+	    		set title to game.id
+	    		call updateUser(game)
+	    		call updateChat(game)
+	    		call redrawWindow(game)
+	    		call input(game)
+	    		keep framerate at 60 fps with 'clock'.tick(60)
+
+	create new Client c
+	call c.main()
+
+
+
+data transfer in this project
+
+	open a Server
+		waits for connections
+
+	open n Clients
+		creates 1 Network object, which handles all sending and receiving processes on the Client side
+
+	the Network object connects to the Server and receives a player number
+		the server creates or starts a new game
+
+	the Client sends frequently a package, asking for an update
+		the Server sends back a copy of the games variables
+
+	depending on the users input, the client can send 3 other types of packages
+		a simple integer between 1 and 7
+			the server then makes a move in the game objects state at the numbers position for the player
+		a command via the message Input, 
+			which begins with "/"
+				if the command is to close the game, the server ends the game directly
+				otherwise the server forwards the command to the game to process it there
+		a message via the message Input,
+			which the server forwards to the game to add it in it's chat list
+			
+		after each package, the server sends back the updated version of the game variables

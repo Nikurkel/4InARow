@@ -1,0 +1,140 @@
+--- server ---
+server,192.168.178.48
+port,5555
+--- server ---
+
+--- ip notes ---
+Niklas Home,192.168.178.48
+Annett Home,192.168.178.39
+--- ip notes ---
+
+--- layout ---
+width,900
+fullscreen,false
+--- layout ---
+
+--- classic ---
+background,323232
+player1_1,323296
+player2_1,963232
+player1_2,969696
+player2_2,969696
+normal_text,0a0a0a
+buttons,646464
+chat,646464
+--- classic ---
+
+--- light ---
+background,ffffff
+player1_1,4f5d75
+player2_1,963232
+player1_2,bfc0c0
+player2_2,969696
+normal_text,2d3142
+buttons,bfc0c0
+chat,bfc0c0
+--- light ---
+
+--- dark1 ---
+background,212529
+player1_1,6c757d
+player2_1,963232
+player1_2,343a40
+player2_2,969696
+normal_text,dee2e6
+buttons,646464
+chat,343a40
+--- dark1 ---
+
+--- dark2 ---
+background,001233
+player1_1,0466c8
+player2_1,963232
+player1_2,33415c
+player2_2,969696
+normal_text,979dac
+buttons,33415c
+chat,33415c
+--- dark2 ---
+
+--- dark3 ---
+background,252422
+player1_1,eb5e28
+player2_1,963232
+player1_2,403d39
+player2_2,969696
+normal_text,ccc5b9
+buttons,403d39
+chat,403d39
+--- dark3 ---
+
+--- dark4 ---
+background,0b132b
+player1_1,5bc0be
+player2_1,963232
+player1_2,3a506b
+player2_2,969696
+normal_text,0b132b
+buttons,3a506b
+chat,3a506b
+--- dark4 ---
+
+--- color1 ---
+background,212f45
+player1_1,006466
+player2_1,963232
+player1_2,4d194d
+player2_2,969696
+normal_text,7d497d
+buttons,144552
+chat,4d194d
+--- color1 ---
+
+--- color2 ---
+background,2f3e46
+player1_1,52796f
+player2_1,963232
+player1_2,354f52
+player2_2,969696
+normal_text,cad2c5
+buttons,354f52
+chat,354f52
+--- color2 ---
+
+--- color3 ---
+background,64a6bd
+player1_1,f4cae0
+player2_1,963232
+player1_2,ada7c9
+player2_2,969696
+normal_text,ffffff
+buttons,ada7c9
+chat,ada7c9
+--- color3 ---
+
+--- color4 ---
+background,faedca
+player1_1,7ebc89
+player2_1,963232
+player1_2,f2c078
+player2_2,969696
+normal_text,fe5d26
+buttons,f2c078
+chat,f2c078
+--- color4 ---
+
+
+
+
+
+--- new ---
+background,111111
+player1_1,323296
+player2_1,963232
+player1_2,3388cc
+player2_2,969696
+normal_text,0a0a0a
+buttons,646464
+chat,646464
+--- new ---
+
